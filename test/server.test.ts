@@ -70,7 +70,8 @@ describe('the contract', () => {
     // Si el contrato cambia sus frases de precio, withoutFigures tiene que seguirlo: ninguna cifra ni marcador.
     expect(all).not.toMatch(/US\$|NaN/);
     expect(instructions(null)).toContain('like the REST API (prices: https://typesearch.ai/pricing)');
-    expect(tools[0]!.description).toContain('Defaults: mode "fast" and the last 7 days.');
+    expect(tools[0]!.description).toContain('Defaults: mode "fast" and the last 7 days; mode "ultra" judges headlines only.');
+    expect(instructions(null)).toContain('mode "ultra" is the cheapest and judges headlines only; "fast" (the default) also judges');
     expect(tools[1]!.description).toContain('Never returns the full text. Billed per page read; pages that fail are free.');
     expect(tools[2]!.description).toMatch(/Useful to see how other outlets covered a story\.$/);
   });

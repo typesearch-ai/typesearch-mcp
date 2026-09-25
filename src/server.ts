@@ -53,6 +53,8 @@ const MARCADOR: ListaDePrecios = {
 export function withoutFigures(text: string): string {
   return text
     .replace(/ \(US\$NaN[^)]*\)/g, '')
+    .replace(/, US\$NaN\)/g, ')')
+    .replace(/, for US\$NaN/g, '')
     .replace(/US\$NaN per 1,000 pages read;/g, 'Billed per page read;')
     .replace(/ US\$NaN per 1,000 \w+\./g, '')
     .replace('at these list prices, like the REST API', `like the REST API (prices: ${PRICING_URL})`);

@@ -34,7 +34,7 @@ export function instrucciones(lista: ListaDePrecios): string {
   const { per_1000_requests: p, per_1000_pages: c } = lista;
   return [
     'typesearch is news search for AI agents: a curated index of news outlets worldwide, judged by a calibrated relevance model. Results carry title, link, source, date, country and language, and short excerpts, never full articles: cite the link.',
-    `- search_news: news on a topic. mode "fast" (the default) is the cheapest and quickest (${usd(p.fast)} per 1,000 searches); "ultra" judges headlines only (same price); "normal" (${usd(p.normal)}) reads the best matches; "deep" (${usd(p.deep)}) reads more and also searches the topic in other words. Narrow it with days, published_after/before, include/exclude_domains, countries (ISO 3166-1 alpha-2) and languages (ISO 639-1).`,
+    `- search_news: news on a topic. mode "ultra" is the cheapest (${usd(p.ultra)} per 1,000 searches) and judges headlines only; "fast" (the default, ${usd(p.fast)}) also judges standfirsts, just as quick; "normal" (${usd(p.normal)}) reads the best matches; "deep" (${usd(p.deep)}) reads more and also searches the topic in other words. Narrow it with days, published_after/before, include/exclude_domains, countries (ISO 3166-1 alpha-2) and languages (ISO 639-1).`,
     `- get_contents: title, standfirst, date and a short excerpt of up to 10 article URLs (${usd(c.contents)} per 1,000 pages; with query, the excerpt about it: ${usd(c.contents_with_query)}).`,
     `- find_similar: other coverage of the story in an article URL (${usd(p.similar)} per 1,000).`,
     '- check_coverage: whether a news domain is covered, or how many sources the index has per country and language (free).',
@@ -81,7 +81,7 @@ export const entradaBusqueda = z.object({
   mode: z
     .enum(MODOS, { error: 'mode must be ultra, fast, normal or deep.' })
     .default('fast')
-    .describe('fast (default, cheapest): headlines and standfirsts · ultra: headlines only · normal: also reads the best matches · deep: reads more, finds the topic in other words too.'),
+    .describe('fast (default): headlines and standfirsts · ultra (cheapest): headlines only · normal: also reads the best matches · deep: reads more, finds the topic in other words too.'),
   max_results: maxResults,
   days: dias.describe('Only the last N days, 1 to 365. Defaults to 7 unless published_after or published_before are given.'),
   published_after: fecha('published_after').optional().describe('Published on or after this date: 2026-09-25, or a date-time with offset.'),
@@ -365,7 +365,7 @@ export function herramientas(lista: ListaDePrecios) {
       description:
         'Search recent news on any topic across a curated index of news outlets worldwide, judged by a relevance model. ' +
         'Returns the matching articles: title, link, source, date, country and language, standfirst, and short excerpts in the modes that read. ' +
-        `Use it for current events and for what outlets reported about a company, person, place or topic. Defaults: mode "fast" (${usd(p.fast)} per 1,000 searches) and the last 7 days.`,
+        `Use it for current events and for what outlets reported about a company, person, place or topic. Defaults: mode "fast" (${usd(p.fast)} per 1,000 searches) and the last 7 days; mode "ultra" judges headlines only, for ${usd(p.ultra)}.`,
       inputSchema: entradaBusqueda,
       outputSchema: salidaBusqueda,
       annotations: { title: 'Search news', ...ANOTACIONES },

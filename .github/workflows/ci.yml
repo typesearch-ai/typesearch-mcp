@@ -22,7 +22,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      # typesearch-js: from npm once it is there; until then, its public repository built next to this one.
+      - run: bash .github/scripts/install.sh
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm pack --dry-run
@@ -31,7 +32,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: docker build -t typesearch-mcp .
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # While package.json asks for typesearch-js by path (before it is on npm), the build takes that folder
+      # as a named context; once it asks for the npm version, it is a plain `docker build`.
+      - run: bash .github/scripts/install.sh --sdk-only
+      - name: docker build
+        run: |
+          if grep -q '"typesearch-js": "file:' package.json; then
+            rm -rf ../typesearch-js/node_modules
+            docker build --build-context typesearch-js=../typesearch-js -t typesearch-mcp .
+          else
+            docker build -t typesearch-mcp .
+          fi
       - name: The image starts and answers the MCP handshake
         run: |
           docker run --rm typesearch-mcp --version
@@ -49,4 +63,5 @@ jobs:
           test "$(jq -r .mcpName package.json)" = "$(jq -r .name server.json)"
       - name: Valid against the MCP Registry schema
         run: |
-          npx -y ajv-cli@5 validate --spec=draft7 -c ajv-formats -s <(curl -fsSL "$(jq -r '."$schema"' server.json)") -d server.json --strict=false
+          curl -fsSL -o "$RUNNER_TEMP/server.schema.json" "$(jq -r '."$schema"' server.json)"
+          npx -y -p ajv-cli@5 -p ajv-formats@3 ajv validate --spec=draft7 -c ajv-formats -s "$RUNNER_TEMP/server.schema.json" -d server.json --strict=false

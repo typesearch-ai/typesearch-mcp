@@ -38,7 +38,7 @@ Results are headlines, standfirsts and short verbatim excerpts, never full artic
 | Mode | What it does | When |
 | --- | --- | --- |
 | `fast` (default) | Judges headlines and standfirsts. About a second. | Almost always: current events, quick checks, loops over many topics. |
-| `ultra` | Headlines only, same price as `fast`. | Many searches where the headline says it all (alerts, classification). |
+| `ultra` | Headlines only. The cheapest, just as quick. | Many searches where the headline says it all (alerts, classification). |
 | `normal` | Also opens and reads the best matches, and returns excerpts. Costs more, a few seconds. | When a wrong result is expensive, or you need the passage, not just the headline. |
 | `deep` | Judges more headlines, also searches the topic in other words, reads more, with excerpts. Costs more, 10–15 seconds. | Research, reports, "find everything", or when `fast` came back thin. |
 

@@ -36,7 +36,7 @@ secret.
 
 ```bash
 # Claude Code
-claude plugin marketplace add typesearch/typesearch-mcp
+claude plugin marketplace add typesearch-ai/typesearch-mcp
 claude plugin install typesearch@typesearch
 
 # Gemini CLI
