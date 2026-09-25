@@ -21,7 +21,6 @@ import {
   salidaDeParecidas,
   type ListaDePrecios,
 } from './contrato/mcp-contrato.ts';
-import type { RespuestaBusqueda } from './contrato/v1.ts';
 import { PRICING_URL } from './pricing.ts';
 import { VERSION } from './version.ts';
 
@@ -105,14 +104,10 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
     }
   }
 
-  // Las respuestas del SDK tienen la forma de las de /v1 (el contrato las tipa con lib/api/v1.ts; acá,
-  // src/contrato/v1.ts): el país y el idioma de cada resultado todavía no están en los tipos del SDK.
-  const search = (r: unknown) => r as RespuestaBusqueda;
-
   server.registerTool('search_news', h.search_news, async (args, ctx) =>
     call(
       (c) => {
-        const options: SearchOptions & { countries?: string[]; languages?: string[] } = {
+        const options: SearchOptions = {
           mode: args.mode,
           max_results: args.max_results,
           ...(args.days !== undefined ? { days: args.days } : {}),
@@ -125,7 +120,7 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
         };
         return c.search(args.query, options, { signal: ctx.mcpReq.signal });
       },
-      (r) => salidaDeBusqueda(search(r), args.query),
+      (r) => salidaDeBusqueda(r, args.query),
     ),
   );
 
@@ -137,7 +132,7 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
     call(
       // `fast`: similar cuesta lo mismo en ultra, fast y normal, y fast no lee más que la nota de referencia.
       (c) => c.similar(args.url, { mode: 'fast', max_results: args.max_results, ...(args.days !== undefined ? { days: args.days } : {}) }, { signal: ctx.mcpReq.signal }),
-      (r) => salidaDeParecidas(search(r)),
+      (r) => salidaDeParecidas(r),
     ),
   );
 
