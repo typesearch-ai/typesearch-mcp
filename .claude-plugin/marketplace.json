@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "typesearch",
+  "metadata": {
+    "description": "typesearch plugins for Claude Code: news search for agents.",
+    "version": "0.1.0"
+  },
+  "owner": {
+    "name": "typesearch",
+    "url": "https://typesearch.ai"
+  },
+  "plugins": [
+    {
+      "name": "typesearch",
+      "source": "./",
+      "description": "News search: the typesearch MCP server and a skill on when and how to use each tool and mode.",
+      "category": "search",
+      "tags": [
+        "news",
+        "search",
+        "mcp"
+      ]
+    }
+  ]
+}

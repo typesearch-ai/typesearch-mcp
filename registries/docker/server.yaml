@@ -1,0 +1,24 @@
+# Para el PR a https://github.com/docker/mcp-registry: copiar como servers/typesearch/server.yaml
+# (con tools.json al lado) y poner en `commit` el del release publicado.
+name: typesearch
+image: mcp/typesearch
+type: server
+meta:
+  category: search
+  tags:
+    - search
+    - news
+    - ai
+about:
+  title: typesearch
+  description: News search for AI agents - recent news on any topic from outlets worldwide, each result with a calibrated relevance score, by country and language.
+  icon: https://typesearch.ai/icon.svg
+source:
+  project: https://github.com/typesearch-ai/typesearch-mcp
+  commit: REEMPLAZAR_POR_EL_COMMIT_DEL_RELEASE
+config:
+  description: Your typesearch API key. Get one at https://app.typesearch.ai/api-keys
+  secrets:
+    - name: typesearch.api_key
+      env: TYPESEARCH_API_KEY
+      example: ts_live_your_key

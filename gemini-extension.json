@@ -1,0 +1,22 @@
+{
+  "name": "typesearch",
+  "version": "0.1.0",
+  "description": "News search for Gemini CLI: recent news on any topic from outlets worldwide, by country and language, each result with a calibrated relevance score.",
+  "mcpServers": {
+    "typesearch": {
+      "httpUrl": "https://api.typesearch.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer $TYPESEARCH_API_KEY"
+      },
+      "timeout": 90000
+    }
+  },
+  "settings": [
+    {
+      "name": "typesearch API key",
+      "description": "Your typesearch API key (ts_live_…). Get one at https://app.typesearch.ai/api-keys",
+      "envVar": "TYPESEARCH_API_KEY",
+      "sensitive": true
+    }
+  ]
+}

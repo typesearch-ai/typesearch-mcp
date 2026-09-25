@@ -1,0 +1,67 @@
+{
+  "name": "typesearch-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for typesearch: news search for AI agents, with a calibrated relevance score on every result. Local (stdio) version of https://api.typesearch.ai/mcp.",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "typesearch",
+    "news",
+    "news-api",
+    "search",
+    "ai",
+    "agents",
+    "claude",
+    "cursor"
+  ],
+  "homepage": "https://typesearch.ai/mcp",
+  "bugs": "https://github.com/typesearch-ai/typesearch-mcp/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/typesearch-ai/typesearch-mcp.git"
+  },
+  "license": "MIT",
+  "author": "typesearch (https://typesearch.ai)",
+  "mcpName": "ai.typesearch/news",
+  "type": "module",
+  "bin": {
+    "typesearch-mcp": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck",
+    "test": "npm run build && vitest run",
+    "test:coverage": "npm run build && vitest run --coverage",
+    "inspect": "npm run build && npx -y @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "npm run lint && npm test",
+    "sync-contract": "node scripts/sync-contract.mjs",
+    "compare-remote": "npm run build && node scripts/compare-remote.mjs"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.1.0",
+    "@modelcontextprotocol/server": "2.1.0",
+    "@types/node": "^22.18.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "typesearch-js": "file:../typesearch-js",
+    "vitest": "^3.2.4",
+    "zod": "4.6.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

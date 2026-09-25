@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "typesearch",
+  "displayName": "typesearch",
+  "version": "0.1.0",
+  "description": "News search for Claude Code: recent news on any topic from outlets worldwide, by country and language, each result with a calibrated relevance score. The typesearch MCP server plus a skill on when and how to use each tool and mode.",
+  "author": {
+    "name": "typesearch",
+    "url": "https://typesearch.ai"
+  },
+  "homepage": "https://typesearch.ai/docs/integrations/mcp",
+  "repository": "https://github.com/typesearch-ai/typesearch-mcp",
+  "license": "MIT",
+  "keywords": ["news", "news-search", "search", "mcp", "current-events", "research"],
+  "userConfig": {
+    "typesearch_api_key": {
+      "type": "string",
+      "title": "typesearch API key",
+      "description": "Your typesearch API key (ts_live_…). Get one at https://app.typesearch.ai/api-keys",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "mcpServers": {
+    "typesearch": {
+      "type": "http",
+      "url": "https://api.typesearch.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.typesearch_api_key}"
+      }
+    }
+  }
+}

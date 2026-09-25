@@ -1,0 +1,27 @@
+{
+  "name": "typesearch",
+  "displayName": "typesearch",
+  "version": "0.1.0",
+  "description": "News search for Cursor: recent news on any topic from outlets worldwide, by country and language, each result with a calibrated relevance score. The typesearch MCP server plus a skill on when and how to use each tool and mode.",
+  "author": {
+    "name": "typesearch"
+  },
+  "homepage": "https://typesearch.ai/docs/integrations/mcp",
+  "repository": "https://github.com/typesearch-ai/typesearch-mcp",
+  "license": "MIT",
+  "keywords": ["news", "news-search", "search", "mcp", "current-events", "research"],
+  "logo": "assets/logo.svg",
+  "skills": "./skills/",
+  "mcpServers": "./mcp.json",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "TYPESEARCH_API_KEY": {
+        "type": "string",
+        "title": "typesearch API key",
+        "description": "Your typesearch API key (ts_live_…). Get one at https://app.typesearch.ai/api-keys"
+      }
+    },
+    "required": ["TYPESEARCH_API_KEY"]
+  }
+}

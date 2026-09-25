@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "typesearch": {
+      "url": "https://api.typesearch.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TYPESEARCH_API_KEY}"
+      }
+    }
+  }
+}

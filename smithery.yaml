@@ -1,0 +1,16 @@
+# Smithery, for the local (stdio) server built from this repository with the Dockerfile.
+# The remote server needs no file: `smithery mcp publish https://api.typesearch.ai/mcp -n typesearch/news`.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: [typesearchApiKey]
+    properties:
+      typesearchApiKey:
+        type: string
+        title: typesearch API key
+        description: Your typesearch API key (ts_live_…). Get one at https://app.typesearch.ai/api-keys
+  commandFunction: |-
+    (config) => ({ command: 'node', args: ['/app/index.mjs'], env: { TYPESEARCH_API_KEY: config.typesearchApiKey } })
+  exampleConfig:
+    typesearchApiKey: ts_live_your_key

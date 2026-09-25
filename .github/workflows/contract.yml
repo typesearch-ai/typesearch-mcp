@@ -1,0 +1,24 @@
+# Once a week, and by hand: the local server lists exactly what the remote one does (tools, parameters,
+# descriptions, annotations and instructions). If this fails, the remote changed its contract: copy it
+# with `npm run sync-contract` (from the typesearch-api repository), test and release.
+name: Contract
+
+on:
+  schedule:
+    - cron: '23 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run compare-remote
