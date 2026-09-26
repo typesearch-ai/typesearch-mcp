@@ -1,10 +1,10 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import type { RespuestaBusqueda, RespuestaContenidos, RespuestaFuente, RespuestaFuentes } from './v1.ts';
+import type { RespuestaBusqueda, RespuestaContenidos } from './v1.ts';
 
 /*
  * El contrato del MCP de typesearch, sin servidor: los parámetros y la salida
- * de las cuatro herramientas, sus títulos y descripciones, las instrucciones y
+ * de las tres herramientas, sus títulos y descripciones, las instrucciones y
  * cómo se escribe cada respuesta (texto legible y `structuredContent` sin
  * campos vacíos). Lo usa el MCP remoto (lib/api/mcp.ts) y lo copia tal cual el
  * MCP local (`typesearch-mcp`), para que los dos digan y devuelvan lo mismo.
@@ -37,7 +37,6 @@ export function instrucciones(lista: ListaDePrecios): string {
     `- search_news: news on a topic. mode "ultra" is the cheapest (${usd(p.ultra)} per 1,000 searches) and judges headlines only; "fast" (the default, ${usd(p.fast)}) also judges standfirsts, just as quick; "normal" (${usd(p.normal)}) reads the best matches; "deep" (${usd(p.deep)}) reads more and also searches the topic in other words. Narrow it with days, published_after/before, include/exclude_domains, countries (ISO 3166-1 alpha-2) and languages (ISO 639-1).`,
     `- get_contents: title, standfirst, date and a short excerpt of up to 10 article URLs (${usd(c.contents)} per 1,000 pages; with query, the excerpt about it: ${usd(c.contents_with_query)}).`,
     `- find_similar: other coverage of the story in an article URL (${usd(p.similar)} per 1,000).`,
-    '- check_coverage: whether a news domain is covered, or how many sources the index has per country and language (free).',
     'Every call is billed to the API key at these list prices, like the REST API; cached results and failed calls are free.',
   ].join('\n');
 }
@@ -117,16 +116,6 @@ export const entradaParecidas = z.object({
   days: dias.describe('Only the last N days, 1 to 365. Defaults to 7.'),
 });
 
-export const entradaCobertura = z.object({
-  domain: z
-    .string(texto('domain'))
-    .trim()
-    .min(3, 'domain looks too short.')
-    .max(300, 'domain: 300 characters at most.')
-    .optional()
-    .describe('A news domain, such as example.com. Without it: the coverage by country and language.'),
-});
-
 // --- Salidas: compactas, sin campos vacíos -------------------------------------------------
 
 const resultadoMcp = z.object({
@@ -175,20 +164,6 @@ export const salidaContenidos = z.object({
   cost_usd: z.number(),
   request_id: z.string(),
 });
-export const salidaCobertura = z.object({
-  domain: z.string().optional(),
-  covered: z.boolean().optional(),
-  name: z.string().optional(),
-  country: z.string().optional(),
-  languages: z.array(z.string()).optional(),
-  articles: z.number().int().optional(),
-  last_refreshed_at: z.string().optional(),
-  sources: z.number().int().optional(),
-  updated_at: z.string().optional(),
-  by_country: z.array(z.object({ country: z.string().describe('ISO 3166-1 alpha-2, or "international".'), sources: z.number().int() })).optional(),
-  by_language: z.array(z.object({ language: z.string(), sources: z.number().int() })).optional(),
-});
-
 /** Sin null, sin cadenas vacías y sin listas vacías: lo que no dice nada no gasta tokens. */
 function sinVacios<T extends Record<string, unknown>>(o: T): T {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0))) as T;
@@ -316,39 +291,6 @@ export function salidaDeContenidos(r: RespuestaContenidos): CallToolResult {
   };
 }
 
-export function salidaDeCobertura(r: RespuestaFuentes | RespuestaFuente): CallToolResult {
-  if (r.object === 'source') {
-    const s = sinVacios({
-      domain: r.domain,
-      covered: r.covered,
-      name: r.name ?? null,
-      country: r.country ?? null,
-      languages: r.languages ?? [],
-      articles: r.articles ?? null,
-      last_refreshed_at: alMinuto(r.last_refreshed_at ?? null),
-    });
-    const texto = r.covered
-      ? `${r.domain} is covered${r.name ? ` (${r.name})` : ''}: ${[r.country, r.languages?.join('/')].filter(Boolean).join(' · ')}${r.articles !== undefined ? ` · ${r.articles.toLocaleString('en-US')} articles` : ''}${s.last_refreshed_at ? ` · last refreshed ${s.last_refreshed_at}` : ''}.`
-      : `${r.domain} is not covered by the index.`;
-    return { content: [{ type: 'text', text: texto }], structuredContent: s };
-  }
-  const porPais = r.by_country.map((x) => ({ country: x.country ?? 'international', sources: x.sources }));
-  const s = sinVacios({
-    sources: r.total,
-    articles: r.articles,
-    updated_at: alMinuto(r.updated_at),
-    by_country: porPais,
-    by_language: r.by_language,
-  });
-  const lista = (xs: { nombre: string; n: number }[]) => xs.map((x) => `${x.nombre} ${x.n}`).join(', ');
-  const texto = [
-    `The index has ${r.total.toLocaleString('en-US')} sources and ${r.articles.toLocaleString('en-US')} articles.`,
-    `Sources by country: ${lista(porPais.map((x) => ({ nombre: x.country, n: x.sources })))}.`,
-    `Sources by language: ${lista(r.by_language.map((x) => ({ nombre: x.language, n: x.sources })))}.`,
-  ].join('\n');
-  return { content: [{ type: 'text', text: texto }], structuredContent: s };
-}
-
 // --- Las herramientas: nombre, título, descripción, esquemas y anotaciones ---------------------------
 
 const ANOTACIONES = { readOnlyHint: true, openWorldHint: true } as const;
@@ -388,14 +330,6 @@ export function herramientas(lista: ListaDePrecios) {
       inputSchema: entradaParecidas,
       outputSchema: salidaParecidas,
       annotations: { title: 'Find similar news', ...ANOTACIONES },
-    },
-    check_coverage: {
-      title: 'Check index coverage',
-      description:
-        'Check whether a news domain is in the typesearch index (pass domain), or get the index coverage: how many sources and articles, by country and by language. Free.',
-      inputSchema: entradaCobertura,
-      outputSchema: salidaCobertura,
-      annotations: { title: 'Check index coverage', ...ANOTACIONES },
     },
   };
 }

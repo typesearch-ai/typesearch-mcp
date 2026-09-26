@@ -21,9 +21,9 @@ In Cursor, replace `YOUR_TYPESEARCH_API_KEY` in the configuration it adds; VS Co
 | `search_news` | News on a topic: title, link, source, date, country and language, standfirst and short excerpts, each with a relevance score. `query` (required), `mode` (`ultra`, `fast`, `normal` or `deep`; `fast` by default), `max_results` (1–25, 10 by default), `days`, `published_after`, `published_before`, `include_domains`, `exclude_domains`, `countries`, `languages`. |
 | `get_contents` | Title, standfirst, date, source and a short verbatim excerpt of up to 10 article URLs — never the full text. `urls` (required), `query` (optional: the excerpt about it, with a relevance score). |
 | `find_similar` | Other coverage of the story in an article URL. `url` (required), `max_results`, `days`. |
-| `check_coverage` | Whether a news domain is covered (`domain`), or the index coverage by country and language. Free. |
 
-Every tool is read-only. Results are compact to save your agent's tokens: readable text for the model plus
+Every tool is read-only. Missing an outlet? Suggest it from the [dashboard](https://app.typesearch.ai)
+(Suggest a source) or write to support@typesearch.ai. Results are compact to save your agent's tokens: readable text for the model plus
 the same data as `structuredContent`. Calls are billed to your key at the [API's prices](https://typesearch.ai/pricing);
 the tool descriptions state them.
 

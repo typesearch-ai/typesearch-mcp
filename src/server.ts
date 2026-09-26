@@ -16,7 +16,6 @@ import {
   instrucciones,
   NOMBRE_MCP,
   salidaDeBusqueda,
-  salidaDeCobertura,
   salidaDeContenidos,
   salidaDeParecidas,
   type ListaDePrecios,
@@ -134,10 +133,6 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
       (c) => c.similar(args.url, { mode: 'fast', max_results: args.max_results, ...(args.days !== undefined ? { days: args.days } : {}) }, { signal: ctx.mcpReq.signal }),
       (r) => salidaDeParecidas(r),
     ),
-  );
-
-  server.registerTool('check_coverage', h.check_coverage, async (args, ctx) =>
-    call((c) => (args.domain ? c.sources({ domain: args.domain }, { signal: ctx.mcpReq.signal }) : c.sources({}, { signal: ctx.mcpReq.signal })), salidaDeCobertura),
   );
 
   return server;

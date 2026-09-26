@@ -16,7 +16,7 @@ Environment:
   TYPESEARCH_API_KEY   Your API key (required for tool calls). Get one at https://app.typesearch.ai
   TYPESEARCH_BASE_URL  Another API base URL (default ${DEFAULT_BASE_URL})
 
-Tools: search_news, get_contents, find_similar, check_coverage.
+Tools: search_news, get_contents, find_similar.
 Remote alternative, no install: https://api.typesearch.ai/mcp
 `;
 

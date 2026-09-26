@@ -1,12 +1,12 @@
 ---
 name: news-search
-description: "Search, read and compare recent news with the typesearch MCP tools (search_news, get_contents, find_similar, check_coverage). Use it when the user asks what happened, what the press reported, the latest on a company, person, market, country or topic, news from a date or a period, coverage from a country or in a language, or how different outlets covered a story; also to check claims against recent reporting."
+description: "Search, read and compare recent news with the typesearch MCP tools (search_news, get_contents, find_similar). Use it when the user asks what happened, what the press reported, the latest on a company, person, market, country or topic, news from a date or a period, coverage from a country or in a language, or how different outlets covered a story; also to check claims against recent reporting."
 ---
 
 # News search with typesearch
 
 typesearch is a news index for agents: outlets worldwide, each article judged by a calibrated relevance model.
-You have four read-only tools. Every result has a link: **cite the link of every fact you take from it.**
+You have three read-only tools. Every result has a link: **cite the link of every fact you take from it.**
 Results are headlines, standfirsts and short verbatim excerpts, never full articles.
 
 ## Which tool
@@ -16,7 +16,6 @@ Results are headlines, standfirsts and short verbatim excerpts, never full artic
 | News on a topic, "what happened", "latest on…" | `search_news` |
 | What a specific article says (a link they gave you, or one from a search) | `get_contents` with `urls`, and `query` to get the passage about it |
 | How other outlets covered a story, or who reported it first | `find_similar` with the article `url` |
-| Whether an outlet is covered, or how many sources a country or language has | `check_coverage` (free) |
 
 ## search_news, well
 

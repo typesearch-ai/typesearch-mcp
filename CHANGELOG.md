@@ -8,8 +8,7 @@ All notable changes to `typesearch-mcp` are documented here. The format follows
 First release.
 
 - Local MCP server over stdio (`npx -y typesearch-mcp`) with the same tools as the remote one at
-  `https://api.typesearch.ai/mcp`: `search_news`, `get_contents`, `find_similar` and `check_coverage`, all
-  read-only.
+  `https://api.typesearch.ai/mcp`: `search_news`, `get_contents` and `find_similar`, all read-only.
 - Compact output for agents: readable text plus `structuredContent`, with output schemas.
 - Starts and lists its tools without a key; every call then explains how to set `TYPESEARCH_API_KEY`.
 - The tool definitions, instructions and output come from the remote server's contract, copied verbatim

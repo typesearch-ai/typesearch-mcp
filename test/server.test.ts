@@ -29,10 +29,10 @@ type Text = { type: 'text'; text: string };
 const textOf = (r: { content?: unknown }) => ((r.content as Text[])[0] ?? { text: '' }).text;
 
 describe('the contract', () => {
-  test('four tools, read-only and open-world, with the contract parameters', async () => {
+  test('three tools, read-only and open-world, with the contract parameters', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar', 'check_coverage']);
+    expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar']);
     for (const t of tools) {
       expect(t.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: true });
       expect(t.title).toBeTruthy();
@@ -47,7 +47,6 @@ describe('the contract', () => {
     expect(required('get_contents')).toEqual(['urls']);
     expect(props('find_similar')).toEqual(['url', 'max_results', 'days']);
     expect(required('find_similar')).toEqual(['url']);
-    expect(props('check_coverage')).toEqual(['domain']);
     const search = tools[0]!.inputSchema as { properties: Record<string, { default?: unknown; maximum?: number; enum?: string[] }> };
     expect(search.properties.mode).toMatchObject({ default: 'fast', enum: ['ultra', 'fast', 'normal', 'deep'] });
     expect(search.properties.max_results).toMatchObject({ default: 10, maximum: 25 });
@@ -173,7 +172,7 @@ describe('search_news', () => {
   });
 });
 
-describe('get_contents, find_similar and check_coverage', () => {
+describe('get_contents and find_similar', () => {
   test('get_contents: each URL with its status; the excerpt is not repeated in highlights', async () => {
     const client = await connect();
     const r = await client.callTool({ name: 'get_contents', arguments: { urls: ['https://reddiaria.example/a', 'https://unreachable.example/b'], query: 'el Presupuesto 2027' } });
@@ -202,20 +201,6 @@ describe('get_contents, find_similar and check_coverage', () => {
     expect(api.last.body).toEqual({ url: 'https://diarioejemplo.example/a', mode: 'fast', max_results: 10, days: 30 });
     expect(textOf(r)).toMatch(/^2 similar articles to "Inflación: qué esperan los analistas" · US\$0\.0011/);
     expect(r.structuredContent).toMatchObject({ reference: { url: 'https://diarioejemplo.example/a' } });
-  });
-
-  test('check_coverage: one domain, or the aggregate', async () => {
-    const client = await connect();
-    const yes = await client.callTool({ name: 'check_coverage', arguments: { domain: 'diarioejemplo.example' } });
-    expect(api.last.query.get('domain')).toBe('diarioejemplo.example');
-    expect(textOf(yes)).toBe('diarioejemplo.example is covered (Diario Ejemplo): AR · es · 1,520 articles · last refreshed 2026-09-22T14:05Z.');
-    const no = await client.callTool({ name: 'check_coverage', arguments: { domain: 'otro.example' } });
-    expect(textOf(no)).toBe('otro.example is not covered by the index.');
-    expect(no.structuredContent).toEqual({ domain: 'otro.example', covered: false });
-    const all = await client.callTool({ name: 'check_coverage', arguments: {} });
-    expect(textOf(all)).toContain('The index has 1,234 sources and 567,890 articles.');
-    expect(textOf(all)).toContain('Sources by country: AR 120, international 4.');
-    expect(all.structuredContent).toMatchObject({ sources: 1234, by_language: [{ language: 'es', sources: 900 }] });
   });
 });
 
@@ -259,7 +244,7 @@ describe('errors', () => {
     await server.connect(a);
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(b);
-    const r = await client.callTool({ name: 'check_coverage', arguments: {} });
+    const r = await client.callTool({ name: 'get_contents', arguments: { urls: ['https://diarioejemplo.example/a'] } });
     expect(textOf(r)).toBe('Error (connection): could not reach the typesearch API. Check the network connection and try again.');
   });
 });

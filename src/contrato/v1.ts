@@ -6,11 +6,9 @@
  * El país y el idioma de cada resultado llegan con la API que filtra por país e idioma; el OpenAPI que
  * copió el SDK todavía no los tiene, así que se suman acá.
  */
-import type { ContentsResponse, Result, SearchResponse, Source, Sources } from 'typesearch-js';
+import type { ContentsResponse, Result, SearchResponse } from 'typesearch-js';
 
 type ConLugar = Result & { country?: string | null; language?: string | null };
 
 export type RespuestaBusqueda = Omit<SearchResponse, 'results' | 'near_misses'> & { results: ConLugar[]; near_misses: ConLugar[] };
 export type RespuestaContenidos = ContentsResponse;
-export type RespuestaFuente = Source;
-export type RespuestaFuentes = Sources;
