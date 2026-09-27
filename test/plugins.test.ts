@@ -49,4 +49,8 @@ test('the news-search skill: frontmatter, the contract tools and the modes, no p
   expect([...named].sort()).toEqual([...tools].sort());
   for (const mode of ['ultra', 'fast', 'normal', 'deep']) expect(skill).toContain(`\`${mode}\``);
   expect(skill).not.toMatch(/US\$\d|\$\d/);
+  expect(front![2]).toContain('create_chart');
+  const chart = skill.split('## create_chart, well\n')[1]?.split('\n## ')[0];
+  expect(chart).toContain('served by the remote server');
+  expect(skill).toContain('https://typesearch.ai/.well-known/skill.md');
 });
