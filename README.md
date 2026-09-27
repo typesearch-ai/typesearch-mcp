@@ -18,11 +18,13 @@ In Cursor, replace `YOUR_TYPESEARCH_API_KEY` in the configuration it adds; VS Co
 
 | Tool | What it does |
 | --- | --- |
-| `search_news` | News on a topic: title, link, source, date, country and language, standfirst and short excerpts, each with a relevance score. `query` (required), `mode` (`ultra`, `fast`, `normal` or `deep`; `fast` by default), `max_results` (1–25, 10 by default), `days`, `published_after`, `published_before`, `include_domains`, `exclude_domains`, `countries`, `languages`. |
+| `search_news` | News on a topic: title, link, source, date, country and language, standfirst and short excerpts, each with a relevance score. `query` (required), `mode` (`ultra`, `fast`, `normal` or `deep`; `fast` by default), `max_results` (1–25, 10 by default), `days`, `published_after`, `published_before`, `include_domains`, `exclude_domains`, `countries`, `languages`, `index` (your own custom index instead of the news). |
 | `get_contents` | Title, standfirst, date, source and a short verbatim excerpt of up to 10 article URLs — never the full text. `urls` (required), `query` (optional: the excerpt about it, with a relevance score). |
 | `find_similar` | Other coverage of the story in an article URL. `url` (required), `max_results`, `days`. |
+| `create_chart` | A chart card from a question in plain words: coverage over time, share of voice, tone, top outlets, a timeline, standings, polls or the figures articles publish. Returns an image to show, an embed, the key figures and the sources. `query` (required), `type`, `theme`, `days`, `compare`, `countries`, `languages`, `index`, `interpretation`. See [Charts](https://typesearch.ai/docs/guides/charts). |
 
-Every tool is read-only. Missing an outlet? Suggest it from the [dashboard](https://app.typesearch.ai)
+`search_news`, `get_contents` and `find_similar` are read-only; `create_chart` stores the card it makes, so its
+image and embed can be opened later. Missing an outlet? Suggest it from the [dashboard](https://app.typesearch.ai)
 (Suggest a source) or write to support@typesearch.ai. Results are compact to save your agent's tokens: readable text for the model plus
 the same data as `structuredContent`. Calls are billed to your key at the [API's prices](https://typesearch.ai/pricing);
 the tool descriptions state them.
@@ -31,9 +33,8 @@ the tool descriptions state them.
 
 This repository is also a plugin for Claude Code, Cursor and Gemini CLI: the remote server plus a
 [`news-search` skill](skills/news-search/SKILL.md) that tells the agent when to use each tool and how to
-pick a mode, a time window, countries and languages, how to read and show a `create_chart` card (a tool
-of the remote server), and where to find the REST API instructions
-([skill.md](https://typesearch.ai/.well-known/skill.md)) when there are no MCP tools. Each one asks for your API key once and keeps it as a
+pick a mode, a time window, countries and languages, how to read and show a `create_chart` card, and where to find the REST API
+instructions ([skill.md](https://typesearch.ai/.well-known/skill.md)) when there are no MCP tools. Each one asks for your API key once and keeps it as a
 secret.
 
 ```bash

@@ -29,7 +29,7 @@ async function connect(env: Record<string, string>) {
 test('npx typesearch-mcp: lists the tools and searches through the API, with its own User-Agent', async () => {
   const { client, stderr } = await connect({ TYPESEARCH_API_KEY: KEY, TYPESEARCH_BASE_URL: api.url });
   const { tools } = await client.listTools();
-  expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar']);
+  expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar', 'create_chart']);
   expect(tools[0]!.description).toContain('US$1.11 per 1,000 searches');
   const r = await client.callTool({ name: 'search_news', arguments: { query: 'el dólar', max_results: 3 } });
   expect(r.isError).toBeFalsy();
@@ -41,7 +41,7 @@ test('npx typesearch-mcp: lists the tools and searches through the API, with its
 
 test('without a key it still starts and lists the tools, and warns on stderr', async () => {
   const { client, stderr } = await connect({ TYPESEARCH_BASE_URL: api.url });
-  expect((await client.listTools()).tools).toHaveLength(3);
+  expect((await client.listTools()).tools).toHaveLength(4);
   const r = await client.callTool({ name: 'search_news', arguments: { query: 'el dólar' } });
   expect(r.isError).toBe(true);
   await client.close();

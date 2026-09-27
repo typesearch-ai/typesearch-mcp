@@ -4,7 +4,7 @@ import type { RespuestaBusqueda, RespuestaContenidos } from './v1.ts';
 
 /*
  * El contrato del MCP de typesearch, sin servidor: los parámetros y la salida
- * de las tres herramientas, sus títulos y descripciones, las instrucciones y
+ * de las cuatro herramientas, sus títulos y descripciones, las instrucciones y
  * cómo se escribe cada respuesta (texto legible y `structuredContent` sin
  * campos vacíos). Lo usa el MCP remoto (lib/api/mcp.ts) y lo copia tal cual el
  * MCP local (`typesearch-mcp`), para que los dos digan y devuelvan lo mismo.
@@ -26,17 +26,21 @@ export const MODOS = ['ultra', 'fast', 'normal', 'deep'] as const;
 export type ListaDePrecios = {
   per_1000_requests: { ultra: number; fast: number; normal: number; deep: number; similar: number; similar_deep: number; site_search: number };
   per_1000_pages: { contents: number; contents_with_query: number };
+  per_1000_urls_per_month?: { custom_index: number };
+  per_1000_charts?: { query_addon: number; from_data: number };
 };
 
 const usd = (x: number) => `US$${x.toFixed(2)}`;
 
 export function instrucciones(lista: ListaDePrecios): string {
   const { per_1000_requests: p, per_1000_pages: c } = lista;
+  const g = lista.per_1000_charts;
   return [
     'typesearch is news search for AI agents: a curated index of news outlets worldwide, judged by a calibrated relevance model. Results carry title, link, source, date, country and language, and short excerpts, never full articles: cite the link.',
-    `- search_news: news on a topic. mode "ultra" is the cheapest (${usd(p.ultra)} per 1,000 searches) and judges headlines only; "fast" (the default, ${usd(p.fast)}) also judges standfirsts, just as quick; "normal" (${usd(p.normal)}) reads the best matches; "deep" (${usd(p.deep)}) reads more and also searches the topic in other words. Narrow it with days, published_after/before, include/exclude_domains, countries (ISO 3166-1 alpha-2) and languages (ISO 639-1).`,
+    `- search_news: news on a topic. mode "ultra" is the cheapest (${usd(p.ultra)} per 1,000 searches) and judges headlines only; "fast" (the default, ${usd(p.fast)}) also judges standfirsts, just as quick; "normal" (${usd(p.normal)}) reads the best matches; "deep" (${usd(p.deep)}) reads more and also searches the topic in other words. Narrow it with days, published_after/before, include/exclude_domains, countries (ISO 3166-1 alpha-2) and languages (ISO 639-1). With index (idx_…), it searches the user's own custom index (their list of URLs) instead of the news index, at the same prices.`,
     `- get_contents: title, standfirst, date and a short excerpt of up to 10 article URLs (${usd(c.contents)} per 1,000 pages; with query, the excerpt about it: ${usd(c.contents_with_query)}).`,
     `- find_similar: other coverage of the story in an article URL (${usd(p.similar)} per 1,000).`,
+    `- create_chart: a chart card from a question in plain words (race standings, poll or election results, wins in a season, coverage over time, share of voice, tone, top outlets, a timeline, the figures articles publish, or custom index data). It picks the chart, the key figures and a title that states the finding, and returns an image URL and an embeddable URL. Show the image to the user.${g ? ` It costs its search (the mode, per query) plus ${usd(g.query_addon)} per 1,000 charts.` : ''}`,
     'Every call is billed to the API key at these list prices, like the REST API; cached results and failed calls are free.',
   ].join('\n');
 }
@@ -99,6 +103,13 @@ export const entradaBusqueda = z.object({
     .max(20, 'languages: 20 codes at most.')
     .optional()
     .describe('Only sources that publish in these languages: ISO 639-1 codes, such as ["es"] or ["en", "pt"].'),
+  index: z
+    .string(texto('index'))
+    .regex(/^idx_[a-z0-9]{6,40}$/, 'index must be a custom index id, such as idx_8f3k2m9q01ab (GET /v1/indexes).')
+    .optional()
+    .describe(
+      'Optional: search your own custom index (its id, idx_…) instead of the news index: your own list of URLs, sitemap or feed, created at https://app.typesearch.ai/indexes or with POST /v1/indexes. Same modes and prices; no date filter unless you pass days or dates.',
+    ),
 });
 
 export const entradaContenidos = z.object({
@@ -114,6 +125,28 @@ export const entradaParecidas = z.object({
   url: z.string(texto('url')).max(2000, 'url: 2000 characters at most.').describe('The article URL whose story to find elsewhere.'),
   max_results: maxResults,
   days: dias.describe('Only the last N days, 1 to 365. Defaults to 7.'),
+});
+
+const TIPOS_GRAFICO = ['auto', 'line', 'area', 'bar', 'bar_horizontal', 'stacked_bar', 'pie', 'donut', 'scatter', 'funnel', 'timeline', 'kpi', 'table'] as const;
+
+export const entradaGrafico = z.object({
+  query: consulta.describe('What to chart, in plain words and any language: "blue dollar this week", "Milei vs Bullrich coverage", "tone of the IMF coverage", "which outlets cover lithium", or "prices" with index.'),
+  type: z
+    .enum(TIPOS_GRAFICO, { error: `type must be one of: ${TIPOS_GRAFICO.join(', ')}.` })
+    .default('auto')
+    .describe('auto (default) picks the chart that tells the data best. Or force one: line, area, bar, bar_horizontal, stacked_bar, pie, donut, scatter, funnel, timeline, kpi, table.'),
+  theme: z.enum(['light', 'dark', 'editorial', 'electric'], { error: 'theme must be light, dark, editorial or electric.' }).default('light').describe('light (default), dark, editorial (warm paper) or electric (deep blue).'),
+  days: dias.describe('Only the last N days, 1 to 365. By default it depends on the chart: 30 for coverage, 7 for figures.'),
+  compare: z
+    .array(z.string(texto('Each item of compare')).max(80, 'compare: 80 characters at most per item.'), { error: 'compare must be a list of 2 to 5 names.' })
+    .min(2, 'compare needs at least two names.')
+    .max(5, 'compare: 5 at most.')
+    .optional()
+    .describe('What to compare, 2 to 5, if the query does not say it with "vs": ["Milei", "Bullrich"].'),
+  countries: entradaBusqueda.shape.countries,
+  languages: entradaBusqueda.shape.languages,
+  index: entradaBusqueda.shape.index.describe('Optional: chart your own custom index (idx_…) instead of the news: prices, ratings, availability, brands.'),
+  interpretation: z.string(texto('interpretation')).max(160, 'interpretation: 160 characters at most.').optional().describe('Optional: one of the `alternatives` of a previous call, to chart that reading of the query instead.'),
 });
 
 // --- Salidas: compactas, sin campos vacíos -------------------------------------------------
@@ -291,6 +324,100 @@ export function salidaDeContenidos(r: RespuestaContenidos): CallToolResult {
   };
 }
 
+// --- El gráfico ---------------------------------------------------------------------------------
+
+/**
+ * Lo que el contrato lee de la respuesta de POST /v1/charts
+ * (lib/graficos/servicio.ts), dicho acá y no importado: el MCP local copia
+ * este archivo tal cual y sólo tiene los tipos de ./v1.ts.
+ */
+export type GraficoParaMcp = {
+  id: string | null;
+  type: string | null;
+  embed_url: string | null;
+  image_url: string | null;
+  chart: {
+    title: string;
+    subtitle?: string;
+    kpis?: { label: string; value: number; change?: { value: number; percent: boolean } }[];
+    series: { name: string; points: { x: string | number; y: number; label?: string }[] }[];
+    events?: { date: string; label: string }[];
+    columns?: { key: string; label: string }[];
+    rows?: Record<string, string | number | null>[];
+    attribution?: string;
+  } | null;
+  sources: { url: string; title: string; source: string | null }[];
+  usage: { cost_usd: number };
+  cached: boolean;
+  warnings: { code: string; message: string }[];
+  interpretation?: { label: string; alternatives: { label: string; probability: number }[] } | null;
+  rung?: string | null;
+  improving?: boolean;
+};
+
+export const salidaGrafico = z.object({
+  id: z.string().optional(),
+  type: z.string(),
+  title: z.string().describe('It states the finding.'),
+  subtitle: z.string().optional(),
+  image_url: z.string().optional().describe('PNG: show it to the user.'),
+  embed_url: z.string().optional().describe('An iframe for a web page or app.'),
+  key_figures: z.array(z.object({ label: z.string(), value: z.number(), change: z.number().optional(), change_is_percent: z.boolean().optional() })).optional(),
+  data: z.array(z.object({ name: z.string(), points: z.array(z.object({ x: z.union([z.string(), z.number()]), y: z.number() })) })).optional().describe('The values drawn (up to 40 per series).'),
+  events: z.array(z.object({ date: z.string(), label: z.string() })).optional(),
+  table: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()]))).optional().describe('The rows of a table chart (up to 10), keyed by column label.'),
+  understood: z.string().optional().describe('What we understood the user expects to see.'),
+  alternatives: z.array(z.string()).optional().describe('Other readings of the query: pass one as `interpretation` to chart it instead.'),
+  rung: z.string().optional().describe('exact (the data asked for), partial (a verified part), related, coverage or stories (the closest thing found).'),
+  improving: z.literal(true).optional().describe('Still looking for the exact data: the image and embed update themselves if it arrives.'),
+  sources: z.array(z.object({ title: z.string(), url: z.string(), source: z.string().optional() })).optional(),
+  cost_usd: z.number(),
+  cached: z.literal(true).optional(),
+  warnings: z.array(aviso).optional(),
+  request_id: z.string(),
+});
+
+export function salidaDeGrafico(r: GraficoParaMcp, requestId: string): CallToolResult {
+  const g = r.chart;
+  const s = sinVacios({
+    id: r.id,
+    type: r.type ?? 'chart',
+    title: g?.title ?? '',
+    subtitle: g?.subtitle,
+    image_url: r.image_url,
+    embed_url: r.embed_url,
+    key_figures: g?.kpis?.map((k) => sinVacios({ label: k.label, value: redondo(k.value), change: k.change ? redondo(k.change.value) : null, change_is_percent: k.change?.percent ?? null })),
+    data: g?.series.map((x) => ({ name: x.name, points: x.points.slice(-40).map((p) => ({ x: p.label ?? p.x, y: redondo(p.y) })) })),
+    events: g?.events?.map((e) => ({ date: e.date, label: e.label })),
+    table: g?.columns?.length && g.rows?.length ? g.rows.slice(0, 10).map((f) => Object.fromEntries(g.columns!.map((c) => [c.label, f[c.key] ?? null]))) : null,
+    understood: r.interpretation?.label,
+    alternatives: r.interpretation?.alternatives.length ? r.interpretation.alternatives.map((a) => a.label) : null,
+    rung: r.rung,
+    improving: r.improving ? (true as const) : null,
+    sources: r.sources.slice(0, 8).map((x) => sinVacios({ title: x.title, url: x.url, source: x.source })),
+    cost_usd: r.usage.cost_usd,
+    cached: r.cached ? (true as const) : null,
+    warnings: r.warnings,
+    request_id: requestId,
+  }) as z.infer<typeof salidaGrafico>;
+  const partes = [
+    ...(s.image_url ? [`![${s.title}](${s.image_url})`] : []),
+    s.title,
+    ...(s.subtitle ? [s.subtitle] : []),
+    ...(s.understood ? [`Understood: ${s.understood}${s.alternatives?.length ? ` (other readings: ${s.alternatives.join('; ')})` : ''}`] : []),
+    ...(s.table?.length ? [s.table.map((f) => Object.values(f).filter((v) => v !== null && v !== '').join(' · ')).join('\n')] : []),
+    ...(s.key_figures?.length ? [s.key_figures.map((k) => `${k.label}: ${k.value}${k.change !== undefined ? ` (${k.change > 0 ? '+' : ''}${k.change}${k.change_is_percent ? '%' : ''})` : ''}`).join(' · ')] : []),
+    ...(s.data?.[0] && !s.table?.length ? [s.data.map((x) => `${x.name}: ${x.points.slice(-12).map((p) => `${p.x} ${p.y}`).join('; ')}`).join('\n')] : []),
+    ...(s.events?.length ? [s.events.map((e) => `${e.date}: ${e.label}`).join('\n')] : []),
+    ...(s.image_url ? [`Image: ${s.image_url}`] : []),
+    ...(s.embed_url ? [`Embed: ${s.embed_url}`] : []),
+    ...(s.sources?.length ? [`Sources:\n${s.sources.map((x, i) => `${i + 1}. ${x.title} ${x.url}`).join('\n')}`] : []),
+    `${s.cached ? 'cached, free' : `US$${s.cost_usd.toFixed(4)}`}`,
+    ...(s.warnings ?? []).map((w) => `Note (${w.code}): ${w.message}`),
+  ];
+  return { content: [{ type: 'text', text: partes.join('\n\n') }], structuredContent: s };
+}
+
 // --- Las herramientas: nombre, título, descripción, esquemas y anotaciones ---------------------------
 
 const ANOTACIONES = { readOnlyHint: true, openWorldHint: true } as const;
@@ -330,6 +457,17 @@ export function herramientas(lista: ListaDePrecios) {
       inputSchema: entradaParecidas,
       outputSchema: salidaParecidas,
       annotations: { title: 'Find similar news', ...ANOTACIONES },
+    },
+    create_chart: {
+      title: 'Create a chart',
+      description:
+        'Turn a question into a chart card, without thinking about chart types: the standings of the latest race, poll or election results by candidate, wins in a season, coverage over time, share of voice between names, tone, the outlets that cover a topic most, what an outlet published, a timeline of a story, the figures the articles publish (a price, a rate), or data from a custom index. ' +
+        'It works out what the user expects (`understood`, with other readings to pass as `interpretation`), verifies every value against its source, picks the chart, the key figures and a title that states the finding, and returns an image URL (show it to the user) and an embed URL. If the exact data is not published it shows the closest thing and says so (`rung`, warnings). ' +
+        `${lista.per_1000_charts ? `It costs its search (the mode it needs, per query) plus ${usd(lista.per_1000_charts.query_addon)} per 1,000 charts; ` : ''}the same request within 10 minutes is free.`,
+      inputSchema: entradaGrafico,
+      outputSchema: salidaGrafico,
+      // Guarda la tarjeta (su embed y su imagen): no es sólo lectura.
+      annotations: { title: 'Create a chart', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
   };
 }
