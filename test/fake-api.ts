@@ -25,6 +25,8 @@ export const PRICING = {
   currency: 'USD',
   per_1000_requests: { ultra: 1.11, fast: 1.11, normal: 2.22, deep: 5.55, similar: 2.22, similar_deep: 4.44, site_search: 2.33 },
   per_1000_pages: { contents: 0.11, contents_with_query: 0.22 },
+  per_1000_urls_per_month: { custom_index: 2.22 },
+  per_1000_charts: { query_addon: 0.55, from_data: 0.33 },
 };
 
 export function result(n: number, extra: Record<string, unknown> = {}) {
@@ -75,6 +77,42 @@ export function searchResponse(extra: Record<string, unknown> = {}) {
     discovery: null,
     incomplete: false,
     cached_at: null,
+    warnings: [],
+    ...extra,
+  };
+}
+
+export function chartResponse(extra: Record<string, unknown> = {}) {
+  return {
+    id: 'chart_fakemcp1',
+    object: 'chart',
+    type: 'line',
+    theme: 'light',
+    locale: 'en',
+    chart: {
+      type: 'line',
+      title: 'The blue dollar rose 4.1% this week',
+      subtitle: 'Selling rate, in pesos · Sep 19–25',
+      series: [{ name: 'Selling', points: [{ x: '2026-09-19', y: 1215, sources: [1] }, { x: '2026-09-25', y: 1265, sources: [0] }] }],
+      kpis: [{ label: 'Latest', value: 1265, change: { value: 4.1, percent: true } }, { label: 'Low', value: 1215 }],
+    },
+    compatible_types: ['line', 'area', 'bar', 'kpi', 'table'],
+    plan: null,
+    interpretation: { label: 'The blue dollar over time', confidence: 0.7, alternatives: [{ label: 'Coverage of the blue dollar', probability: 0.3 }] },
+    rung: 'exact',
+    improving: false,
+    sources: [
+      { url: 'https://diarioejemplo.example/economia/dolar-blue-hoy', title: 'El dólar blue cerró a 1.265 pesos', source: 'Diario Ejemplo', published_at: '2026-09-25T18:10:00Z' },
+      { url: 'https://reddiaria.example/economia/blue', title: 'El blue arranca la semana en 1.215 pesos', source: 'Red Diaria', published_at: '2026-09-19T15:40:00Z' },
+    ],
+    embed_url: 'https://api.typesearch.ai/embed/chart_fakemcp1',
+    image_url: 'https://api.typesearch.ai/embed/chart_fakemcp1.png',
+    svg_url: 'https://api.typesearch.ai/embed/chart_fakemcp1.svg',
+    svg: null,
+    created_at: '2026-09-26T14:02:11.482Z',
+    expires_at: '2026-12-25T14:02:11.482Z',
+    cached: false,
+    usage: { cost_usd: 0.0019, mode: 'fast', queries: 1, duration_ms: 2840 },
     warnings: [],
     ...extra,
   };
@@ -132,6 +170,7 @@ export class FakeApi {
     if (ruta === 'POST /v1/similar') {
       return send(200, searchResponse({ object: 'similar', queries: [], reference: { url: body.url, title: 'Inflación: qué esperan los analistas' } }));
     }
+    if (ruta === 'POST /v1/charts') return send(201, chartResponse());
     if (ruta === 'POST /v1/contents') {
       const vacio = { title: null, description: null, published_at: null, source: null, excerpt: null, highlights: [], relevance: null };
       const results = (body.urls as string[]).map((u) =>

@@ -45,12 +45,12 @@ test('the news-search skill: frontmatter, the contract tools and the modes, no p
   expect(front![2]!.length).toBeLessThan(1024);
   const tools = Object.keys(herramientas(PRICING));
   for (const t of tools) expect(skill).toContain(`\`${t}\``);
-  const named = new Set(skill.match(/`[a-z]+_[a-z_]+`/g)?.map((x) => x.slice(1, -1)).filter((x) => /^(search|get|find|check)_/.test(x)));
+  const named = new Set(skill.match(/`[a-z]+_[a-z_]+`/g)?.map((x) => x.slice(1, -1)).filter((x) => /^(search|get|find|check|create)_/.test(x)));
   expect([...named].sort()).toEqual([...tools].sort());
   for (const mode of ['ultra', 'fast', 'normal', 'deep']) expect(skill).toContain(`\`${mode}\``);
   expect(skill).not.toMatch(/US\$\d|\$\d/);
   expect(front![2]).toContain('create_chart');
   const chart = skill.split('## create_chart, well\n')[1]?.split('\n## ')[0];
-  expect(chart).toContain('served by the remote server');
+  for (const field of ['`understood`', '`interpretation`', '`rung`', '`image_url`', '`cached: true`']) expect(chart).toContain(field);
   expect(skill).toContain('https://typesearch.ai/.well-known/skill.md');
 });

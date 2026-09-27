@@ -8,7 +8,9 @@ All notable changes to `typesearch-mcp` are documented here. The format follows
 First release.
 
 - Local MCP server over stdio (`npx -y typesearch-mcp`) with the same tools as the remote one at
-  `https://api.typesearch.ai/mcp`: `search_news`, `get_contents` and `find_similar`, all read-only.
+  `https://api.typesearch.ai/mcp`: `search_news`, `get_contents` and `find_similar` (read-only),
+  and `create_chart`, a chart card from a question in plain words (`POST /v1/charts`). `search_news` also takes
+  `index`, to search a custom index.
 - Compact output for agents: readable text plus `structuredContent`, with output schemas.
 - Starts and lists its tools without a key; every call then explains how to set `TYPESEARCH_API_KEY`.
 - The tool definitions, instructions and output come from the remote server's contract, copied verbatim
@@ -18,7 +20,6 @@ First release.
 - Plugins for Claude Code (`.claude-plugin/`, with a marketplace), Cursor (`.cursor-plugin/`, `mcp.json`) and
   Gemini CLI (`gemini-extension.json`): the remote server with the key kept as a secret, and a `news-search`
   skill (`skills/`) on when and how to use each tool and mode, how to read and show a `create_chart` card
-  (served by the remote server only) and where to call the REST API instead
-  (https://typesearch.ai/.well-known/skill.md).
+  and where to call the REST API instead (https://typesearch.ai/.well-known/skill.md).
 - A single bundled file with no runtime dependencies; Dockerfile, `server.json` for the MCP Registry,
   `glama.json` and `smithery.yaml`.

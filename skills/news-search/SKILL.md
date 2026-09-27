@@ -1,12 +1,12 @@
 ---
 name: news-search
-description: "Search, read and compare recent news with the typesearch MCP tools (search_news, get_contents, find_similar, and create_chart on the remote server). Use it when the user asks what happened, what the press reported, the latest on a company, person, market, country or topic, news from a date or a period, coverage from a country or in a language, or how different outlets covered a story; also to check claims against recent reporting, and for a chart of coverage, figures, standings, polls, tone or a timeline from a question."
+description: "Search, read and compare recent news with the typesearch MCP tools (search_news, get_contents, find_similar, create_chart). Use it when the user asks what happened, what the press reported, the latest on a company, person, market, country or topic, news from a date or a period, coverage from a country or in a language, or how different outlets covered a story; also to check claims against recent reporting, and for a chart of coverage, figures, standings, polls, tone or a timeline from a question."
 ---
 
 # News search with typesearch
 
 typesearch is a news index for agents: outlets worldwide, each article judged by a calibrated relevance model.
-You have three read-only tools, plus `create_chart` on the remote server. Every result has a link: **cite the link of every fact you take from it.**
+You have three read-only tools, plus `create_chart`, which makes chart cards. Every result has a link: **cite the link of every fact you take from it.**
 Results are headlines, standfirsts and short verbatim excerpts, never full articles.
 
 ## Which tool
@@ -57,9 +57,8 @@ you do. Each tool description states its current price.
 
 ## create_chart, well
 
-`create_chart` is served by the remote server (`https://api.typesearch.ai/mcp`, the one the plugins use); the
-local `npx` package doesn't have it. It turns a question into a finished chart card: it picks the chart, checks
-every value against its source, and writes a title that states the finding.
+`create_chart` turns a question into a finished chart card: it picks the chart, checks every value against its
+source, and writes a title that states the finding. It stores the card, so its image and embed keep working.
 
 1. **What it takes.** `query` in plain words, any language: "blue dollar this week", "Milei vs Bullrich
    coverage", "which outlets cover lithium". `compare` (2 to 5 names) when the query doesn't say it with "vs".

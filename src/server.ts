@@ -17,7 +17,9 @@ import {
   NOMBRE_MCP,
   salidaDeBusqueda,
   salidaDeContenidos,
+  salidaDeGrafico,
   salidaDeParecidas,
+  type GraficoParaMcp,
   type ListaDePrecios,
 } from './contrato/mcp-contrato.ts';
 import { PRICING_URL } from './pricing.ts';
@@ -106,7 +108,8 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
   server.registerTool('search_news', h.search_news, async (args, ctx) =>
     call(
       (c) => {
-        const options: SearchOptions = {
+        // `index` (un índice propio) todavía no está en los tipos del SDK; el SDK manda las opciones tal cual.
+        const options: SearchOptions & { index?: string } = {
           mode: args.mode,
           max_results: args.max_results,
           ...(args.days !== undefined ? { days: args.days } : {}),
@@ -116,6 +119,7 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
           ...(args.exclude_domains?.length ? { exclude_domains: args.exclude_domains } : {}),
           ...(args.countries?.length ? { countries: args.countries } : {}),
           ...(args.languages?.length ? { languages: args.languages } : {}),
+          ...(args.index ? { index: args.index } : {}),
         };
         return c.search(args.query, options, { signal: ctx.mcpReq.signal });
       },
@@ -132,6 +136,31 @@ export function createServer({ client, pricing }: ServerOptions): McpServer {
       // `fast`: similar cuesta lo mismo en ultra, fast y normal, y fast no lee más que la nota de referencia.
       (c) => c.similar(args.url, { mode: 'fast', max_results: args.max_results, ...(args.days !== undefined ? { days: args.days } : {}) }, { signal: ctx.mcpReq.signal }),
       (r) => salidaDeParecidas(r),
+    ),
+  );
+
+  server.registerTool('create_chart', h.create_chart, async (args, ctx) =>
+    call(
+      // POST /v1/charts todavía no tiene método en el SDK: el mismo pedido que arma el remoto.
+      (c) =>
+        c.send<GraficoParaMcp>(
+          'POST',
+          '/v1/charts',
+          {
+            query: args.query,
+            type: args.type,
+            theme: args.theme,
+            ...(args.days !== undefined ? { days: args.days } : {}),
+            ...(args.compare?.length ? { compare: args.compare } : {}),
+            ...(args.countries?.length ? { countries: args.countries } : {}),
+            ...(args.languages?.length ? { languages: args.languages } : {}),
+            ...(args.index ? { index: args.index } : {}),
+            ...(args.interpretation ? { interpretation: args.interpretation } : {}),
+          },
+          { signal: ctx.mcpReq.signal },
+        ),
+      // El SDK no expone el X-Request-Id de una respuesta correcta: el id de la tarjeta identifica la llamada.
+      (r) => salidaDeGrafico(r, r.id ?? ''),
     ),
   );
 

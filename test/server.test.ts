@@ -5,7 +5,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { fetchPricing } from '../src/pricing.ts';
 import { createServer, instructions, toolError } from '../src/server.ts';
 import { VERSION } from '../src/version.ts';
-import { FakeApi, KEY, PRICING, problem, searchResponse } from './fake-api.ts';
+import { chartResponse, FakeApi, KEY, PRICING, problem, searchResponse } from './fake-api.ts';
 
 let api: FakeApi;
 
@@ -29,24 +29,27 @@ type Text = { type: 'text'; text: string };
 const textOf = (r: { content?: unknown }) => ((r.content as Text[])[0] ?? { text: '' }).text;
 
 describe('the contract', () => {
-  test('three tools, read-only and open-world, with the contract parameters', async () => {
+  test('three read-only tools and create_chart, open-world, with the contract parameters', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar']);
+    expect(tools.map((t) => t.name)).toEqual(['search_news', 'get_contents', 'find_similar', 'create_chart']);
     for (const t of tools) {
-      expect(t.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: true });
+      // create_chart guarda la tarjeta que hace (su imagen y su embed): no es sólo lectura.
+      expect(t.annotations).toMatchObject({ readOnlyHint: t.name !== 'create_chart', openWorldHint: true });
       expect(t.title).toBeTruthy();
       expect(t.description!.length).toBeGreaterThan(80);
       expect(t.outputSchema).toBeDefined();
     }
     const props = (name: string) => Object.keys((tools.find((t) => t.name === name)!.inputSchema as { properties: object }).properties);
     const required = (name: string) => (tools.find((t) => t.name === name)!.inputSchema as { required?: string[] }).required ?? [];
-    expect(props('search_news')).toEqual(['query', 'mode', 'max_results', 'days', 'published_after', 'published_before', 'include_domains', 'exclude_domains', 'countries', 'languages']);
+    expect(props('search_news')).toEqual(['query', 'mode', 'max_results', 'days', 'published_after', 'published_before', 'include_domains', 'exclude_domains', 'countries', 'languages', 'index']);
     expect(required('search_news')).toEqual(['query']);
     expect(props('get_contents')).toEqual(['urls', 'query']);
     expect(required('get_contents')).toEqual(['urls']);
     expect(props('find_similar')).toEqual(['url', 'max_results', 'days']);
     expect(required('find_similar')).toEqual(['url']);
+    expect(props('create_chart')).toEqual(['query', 'type', 'theme', 'days', 'compare', 'countries', 'languages', 'index', 'interpretation']);
+    expect(required('create_chart')).toEqual(['query']);
     const search = tools[0]!.inputSchema as { properties: Record<string, { default?: unknown; maximum?: number; enum?: string[] }> };
     expect(search.properties.mode).toMatchObject({ default: 'fast', enum: ['ultra', 'fast', 'normal', 'deep'] });
     expect(search.properties.max_results).toMatchObject({ default: 10, maximum: 25 });
@@ -119,6 +122,7 @@ describe('search_news', () => {
         exclude_domains: ['reddiaria.example'],
         countries: ['AR'],
         languages: ['es'],
+        index: 'idx_8f3k2m9q01ab',
       },
     });
     expect(api.last.body).toEqual({
@@ -132,6 +136,7 @@ describe('search_news', () => {
       exclude_domains: ['reddiaria.example'],
       countries: ['AR'],
       languages: ['es'],
+      index: 'idx_8f3k2m9q01ab',
     });
   });
 
@@ -201,6 +206,75 @@ describe('get_contents and find_similar', () => {
     expect(api.last.body).toEqual({ url: 'https://diarioejemplo.example/a', mode: 'fast', max_results: 10, days: 30 });
     expect(textOf(r)).toMatch(/^2 similar articles to "Inflación: qué esperan los analistas" · US\$0\.0011/);
     expect(r.structuredContent).toMatchObject({ reference: { url: 'https://diarioejemplo.example/a' } });
+  });
+});
+
+describe('create_chart', () => {
+  test('calls /v1/charts with the query, type and theme, and answers with the image, the figures and the sources', async () => {
+    const client = await connect();
+    const r = await client.callTool({ name: 'create_chart', arguments: { query: 'blue dollar this week' } });
+    expect(api.last).toMatchObject({ method: 'POST', path: '/v1/charts', body: { query: 'blue dollar this week', type: 'auto', theme: 'light' } });
+    expect(r.isError).toBeFalsy();
+    expect(r.structuredContent).toEqual({
+      id: 'chart_fakemcp1',
+      type: 'line',
+      title: 'The blue dollar rose 4.1% this week',
+      subtitle: 'Selling rate, in pesos · Sep 19–25',
+      image_url: 'https://api.typesearch.ai/embed/chart_fakemcp1.png',
+      embed_url: 'https://api.typesearch.ai/embed/chart_fakemcp1',
+      key_figures: [{ label: 'Latest', value: 1265, change: 4.1, change_is_percent: true }, { label: 'Low', value: 1215 }],
+      data: [{ name: 'Selling', points: [{ x: '2026-09-19', y: 1215 }, { x: '2026-09-25', y: 1265 }] }],
+      understood: 'The blue dollar over time',
+      alternatives: ['Coverage of the blue dollar'],
+      rung: 'exact',
+      sources: [
+        { title: 'El dólar blue cerró a 1.265 pesos', url: 'https://diarioejemplo.example/economia/dolar-blue-hoy', source: 'Diario Ejemplo' },
+        { title: 'El blue arranca la semana en 1.215 pesos', url: 'https://reddiaria.example/economia/blue', source: 'Red Diaria' },
+      ],
+      cost_usd: 0.0019,
+      request_id: 'chart_fakemcp1',
+    });
+    expect(textOf(r)).toMatch(/^!\[The blue dollar rose 4\.1% this week\]\(https:\/\/api\.typesearch\.ai\/embed\/chart_fakemcp1\.png\)/);
+  });
+
+  test('passes every option as the API names it, and says when it is cached or still improving', async () => {
+    const client = await connect();
+    api.next({ status: 200, body: chartResponse({ cached: true, improving: true, rung: 'coverage' }) });
+    const r = await client.callTool({
+      name: 'create_chart',
+      arguments: {
+        query: 'Formula 1',
+        type: 'table',
+        theme: 'dark',
+        days: 14,
+        compare: ['Verstappen', 'Norris'],
+        countries: ['GB'],
+        languages: ['en'],
+        index: 'idx_8f3k2m9q01ab',
+        interpretation: 'Wins per driver in the 2026 Formula 1 season',
+      },
+    });
+    expect(api.last.body).toEqual({
+      query: 'Formula 1',
+      type: 'table',
+      theme: 'dark',
+      days: 14,
+      compare: ['Verstappen', 'Norris'],
+      countries: ['GB'],
+      languages: ['en'],
+      index: 'idx_8f3k2m9q01ab',
+      interpretation: 'Wins per driver in the 2026 Formula 1 season',
+    });
+    expect(r.structuredContent).toMatchObject({ cached: true, improving: true, rung: 'coverage' });
+    expect(textOf(r)).toContain('cached, free');
+  });
+
+  test('a topic with no articles is an error for the model', async () => {
+    const client = await connect();
+    api.next({ status: 422, body: problem(422, 'no_articles', 'No articles on this topic in the last 30 days.') });
+    const r = await client.callTool({ name: 'create_chart', arguments: { query: 'zzqx' } });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toBe('Error (no_articles): No articles on this topic in the last 30 days. [request req_fakeerr1]');
   });
 });
 
