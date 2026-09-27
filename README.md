@@ -31,7 +31,9 @@ the tool descriptions state them.
 
 This repository is also a plugin for Claude Code, Cursor and Gemini CLI: the remote server plus a
 [`news-search` skill](skills/news-search/SKILL.md) that tells the agent when to use each tool and how to
-pick a mode, a time window, countries and languages. Each one asks for your API key once and keeps it as a
+pick a mode, a time window, countries and languages, how to read and show a `create_chart` card (a tool
+of the remote server), and where to find the REST API instructions
+([skill.md](https://typesearch.ai/.well-known/skill.md)) when there are no MCP tools. Each one asks for your API key once and keeps it as a
 secret.
 
 ```bash
